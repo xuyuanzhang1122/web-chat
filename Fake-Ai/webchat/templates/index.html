@@ -1,0 +1,2598 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<meta id="theme-color-meta" name="theme-color" content="#f4f6fb">
+<title>新对话 - AI 助手</title>
+
+<!-- Marked.js for Markdown -->
+<script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+<!-- Highlight.js for code -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+<style>
+/* ─── CSS Variables ─────────────────────────────────────────────────────── */
+:root {
+  --bg:           #0d0d0d;
+  --bg2:          #161616;
+  --bg3:          #1f1f1f;
+  --bg4:          #2a2a2a;
+  --border:       #2e2e2e;
+  --border2:      #3d3d3d;
+  --text:         #e8e8e8;
+  --text2:        #a0a0a0;
+  --text3:        #666;
+  --accent:       #5865f2;
+  --accent-h:     #6976f5;
+  --accent-soft:  rgba(88,101,242,0.15);
+  --user-bg:      #1e3a8a;
+  --user-text:    #eff6ff;
+  --danger:       #ef4444;
+  --warn:         #f59e0b;
+  --ok:           #22c55e;
+  --sidebar-w:    268px;
+  --header-h:     54px;
+  --radius:       14px;
+  --radius-s:     8px;
+  --shadow:       0 4px 24px rgba(0,0,0,.45);
+  --font:         -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  --mono:         'JetBrains Mono','Fira Code',Consolas,'Courier New',monospace;
+  --transition:   .18s ease;
+}
+
+/* ─── Reset ─────────────────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.65;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+button,input,textarea{font-family:inherit;font-size:inherit}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+svg{display:block;flex-shrink:0}
+
+/* ─── Scrollbars ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:99px}
+::-webkit-scrollbar-thumb:hover{background:var(--border2)}
+
+/* ─── Layout ─────────────────────────────────────────────────────────────── */
+#app{display:flex;height:100dvh;overflow:hidden;position:relative}
+
+/* ─── Sidebar ────────────────────────────────────────────────────────────── */
+#sidebar{
+  width:var(--sidebar-w);
+  background:var(--bg2);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  flex-shrink:0;
+  transition:transform var(--transition);
+  z-index:100;
+}
+#sidebar-header{
+  padding:16px 14px 10px;
+  display:flex;align-items:center;gap:8px;
+}
+#new-chat-btn{
+  flex:1;
+  display:flex;align-items:center;gap:8px;
+  background:var(--accent-soft);
+  border:1px solid var(--accent);
+  color:var(--accent-h);
+  padding:9px 14px;
+  border-radius:var(--radius-s);
+  cursor:pointer;
+  font-size:14px;font-weight:500;
+  transition:background var(--transition),color var(--transition);
+}
+#new-chat-btn:hover{background:var(--accent);color:#fff}
+#sidebar-search{
+  padding:0 14px 10px;
+}
+#sidebar-search input{
+  width:100%;
+  background:var(--bg3);
+  border:1px solid var(--border);
+  border-radius:var(--radius-s);
+  padding:8px 12px;
+  color:var(--text);
+  font-size:13px;
+  outline:none;
+  transition:border-color var(--transition);
+}
+#sidebar-search input:focus{border-color:var(--accent)}
+#sidebar-search input::placeholder{color:var(--text3)}
+#conversation-list{
+  flex:1;overflow-y:auto;padding:0 8px 16px;
+}
+.conv-group-label{
+  font-size:11px;font-weight:600;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.08em;
+  padding:10px 6px 4px;
+  user-select:none;
+}
+.conv-item{
+  display:flex;align-items:center;gap:6px;
+  padding:9px 10px;
+  border-radius:var(--radius-s);
+  cursor:pointer;
+  position:relative;
+  transition:background var(--transition);
+  group: conv;
+}
+.conv-item:hover,.conv-item.active{background:var(--bg3)}
+.conv-item.active{background:var(--bg4)}
+.conv-title{
+  flex:1;min-width:0;
+  font-size:13.5px;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.conv-del{
+  opacity:0;flex-shrink:0;
+  background:none;border:none;
+  color:var(--text3);cursor:pointer;padding:2px;
+  border-radius:4px;
+  transition:opacity var(--transition),color var(--transition);
+}
+.conv-item:hover .conv-del{opacity:1}
+.conv-del:hover{color:var(--danger)}
+.no-convs{
+  text-align:center;padding:40px 16px;
+  color:var(--text3);font-size:13px;
+}
+#sidebar-footer{
+  padding:12px 14px;
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+.sidebar-footer-btn{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
+  background:none;border:1px solid var(--border);
+  color:var(--text2);cursor:pointer;
+  padding:8px 12px;border-radius:var(--radius-s);
+  font-size:12px;
+  transition:background var(--transition),color var(--transition),border-color var(--transition);
+}
+.sidebar-footer-btn:hover{background:var(--bg3);color:var(--text);border-color:var(--border2)}
+
+/* ─── Main area ──────────────────────────────────────────────────────────── */
+#main{
+  flex:1;min-width:0;
+  display:flex;flex-direction:column;
+  background:var(--bg);
+  position:relative;
+}
+
+/* ─── Header ─────────────────────────────────────────────────────────────── */
+#header{
+  height:var(--header-h);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+  padding:0 16px;
+  background:var(--bg);
+  flex-shrink:0;
+  position:relative;
+  z-index:10;
+}
+#menu-btn{
+  display:none;
+  background:none;border:none;color:var(--text2);
+  cursor:pointer;padding:6px;border-radius:6px;
+  transition:background var(--transition);
+}
+#menu-btn:hover{background:var(--bg3)}
+#chat-title{
+  flex:1;min-width:0;
+  font-size:15px;font-weight:500;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  color:var(--text);
+  cursor:pointer;
+}
+#chat-title:hover{color:var(--accent)}
+.header-actions{display:flex;align-items:center;gap:4px}
+.header-btn{
+  background:none;border:none;color:var(--text2);
+  cursor:pointer;padding:8px;border-radius:var(--radius-s);
+  transition:background var(--transition),color var(--transition);
+}
+.header-btn:hover{background:var(--bg3);color:var(--text)}
+.model-badge{
+  font-size:11px;color:var(--text3);
+  background:var(--bg3);border:1px solid var(--border);
+  padding:3px 8px;border-radius:99px;
+  white-space:nowrap;
+}
+
+/* ─── Messages area ──────────────────────────────────────────────────────── */
+#messages-wrap{
+  flex:1;overflow-y:auto;
+  padding:24px 0;
+  scroll-behavior:smooth;
+}
+#messages{max-width:820px;margin:0 auto;padding:0 20px;}
+
+/* Welcome screen */
+#welcome{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;min-height:60vh;
+  text-align:center;padding:32px 20px;
+}
+.welcome-logo{
+  width:64px;height:64px;margin-bottom:20px;
+  background:var(--accent-soft);border:1px solid var(--accent);
+  border-radius:16px;display:flex;align-items:center;justify-content:center;
+}
+.welcome-logo svg{width:36px;height:36px;color:var(--accent)}
+#welcome h1{font-size:26px;font-weight:600;color:var(--text);margin-bottom:8px}
+#welcome p{color:var(--text2);font-size:15px;max-width:440px;line-height:1.7}
+.suggestion-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+  margin-top:28px;max-width:540px;width:100%;
+}
+.suggestion-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px 16px;
+  cursor:pointer;text-align:left;
+  transition:background var(--transition),border-color var(--transition);
+}
+.suggestion-card:hover{background:var(--bg3);border-color:var(--border2)}
+.suggestion-card h4{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px}
+.suggestion-card p{font-size:12px;color:var(--text2);line-height:1.5}
+
+/* Message bubbles */
+.msg{
+  display:flex;gap:12px;
+  margin-bottom:24px;
+  animation:msgIn .25s ease;
+}
+@keyframes msgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{flex-direction:row-reverse}
+.msg-avatar{
+  width:34px;height:34px;border-radius:50%;
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;
+}
+.msg.user .msg-avatar{background:var(--accent);color:#fff}
+.msg.assistant .msg-avatar{background:var(--bg3);border:1px solid var(--border)}
+.msg-body{max-width:85%;display:flex;flex-direction:column;gap:4px;}
+.msg.user .msg-body{align-items:flex-end}
+.msg-bubble{
+  padding:12px 16px;border-radius:var(--radius);
+  font-size:14.5px;line-height:1.75;
+  position:relative;
+}
+.msg.user .msg-bubble{
+  background:var(--user-bg);color:var(--user-text);
+  border-bottom-right-radius:4px;
+}
+.msg.assistant .msg-bubble{
+  background:var(--bg2);border:1px solid var(--border);
+  color:var(--text);border-bottom-left-radius:4px;
+}
+.msg-bubble.error{border-color:var(--danger);color:var(--danger)}
+.msg-meta{
+  font-size:11px;color:var(--text3);
+  display:flex;gap:8px;align-items:center;
+}
+.msg.user .msg-meta{justify-content:flex-end}
+.msg-actions{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;}
+.msg-action-btn{
+  background:none;border:1px solid var(--border);
+  color:var(--text3);cursor:pointer;
+  padding:4px 10px;border-radius:6px;font-size:11px;
+  display:flex;align-items:center;gap:4px;
+  transition:background var(--transition),color var(--transition),border-color var(--transition);
+}
+.msg-action-btn:hover{background:var(--bg3);color:var(--text);border-color:var(--border2)}
+.regen-btn{color:var(--accent-h)!important;border-color:rgba(88,101,242,.35)!important}
+.regen-btn:hover{background:var(--accent-soft)!important;border-color:var(--accent)!important}
+
+/* ─── Think block (<think>…</think> DeepSeek chain-of-thought) ──────────── */
+.think-block{
+  margin-bottom:10px;
+  border:1px solid var(--border);border-radius:var(--radius-s);
+  overflow:hidden;
+}
+.think-header{
+  display:flex;align-items:center;gap:6px;
+  padding:7px 12px;
+  background:var(--bg3);cursor:pointer;
+  font-size:12px;color:var(--text2);
+  user-select:none;
+  transition:color var(--transition);
+}
+.think-header:hover{color:var(--text)}
+.think-chevron{transition:transform .2s;flex-shrink:0}
+.think-block.open .think-chevron{transform:rotate(90deg)}
+.think-label{flex:1}
+.think-live{
+  display:flex;align-items:center;gap:5px;
+  font-size:11px;color:var(--accent-h);
+}
+.think-live-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--accent);
+  animation:blink .8s step-end infinite;
+}
+.think-body{
+  display:none;
+  padding:10px 14px;
+  font-size:13px;color:var(--text2);line-height:1.7;
+  border-top:1px solid var(--border);
+  max-height:280px;overflow-y:auto;
+}
+.think-block.open .think-body{display:block}
+
+/* ─── Voice permission badge button ──────────────────────────────────────── */
+#voice-perm-btn{position:relative;font-size:11px;gap:4px;padding:6px 8px;}
+.perm-badge{
+  position:absolute;top:4px;right:4px;
+  width:7px;height:7px;border-radius:50%;
+  background:var(--warn);border:1.5px solid var(--bg);
+}
+#voice-perm-btn.denied .perm-badge{background:var(--danger)}
+
+/* File attachments in user message */
+.msg-files{
+  display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;
+}
+.msg.user .msg-files{justify-content:flex-end}
+.file-chip{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.08);
+  border-radius:8px;padding:6px 10px;
+  font-size:12px;max-width:200px;
+}
+.file-chip svg{flex-shrink:0;color:var(--accent-h)}
+.file-chip-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-chip.image img{
+  width:160px;height:100px;object-fit:cover;
+  border-radius:var(--radius-s);display:block;margin-top:4px;
+}
+
+/* Typing cursor */
+.typing-cursor{
+  display:inline-block;width:2px;height:1.1em;
+  background:var(--accent);
+  animation:blink .8s step-end infinite;
+  vertical-align:middle;margin-left:2px;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* Thinking dots */
+.thinking{display:flex;gap:5px;padding:4px 0}
+.thinking span{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--text3);
+  animation:dots 1.4s ease-in-out infinite both;
+}
+.thinking span:nth-child(1){animation-delay:-.32s}
+.thinking span:nth-child(2){animation-delay:-.16s}
+@keyframes dots{0%,80%,100%{transform:scale(0.6);opacity:.5}40%{transform:scale(1);opacity:1}}
+
+/* Markdown styles inside assistant messages */
+.msg-bubble .md h1,.msg-bubble .md h2,.msg-bubble .md h3{
+  font-weight:600;margin:1em 0 .5em;line-height:1.3;
+}
+.msg-bubble .md h1{font-size:1.25em}
+.msg-bubble .md h2{font-size:1.1em}
+.msg-bubble .md h3{font-size:1em}
+.msg-bubble .md p{margin:.5em 0}
+.msg-bubble .md ul,.msg-bubble .md ol{margin:.5em 0;padding-left:1.5em}
+.msg-bubble .md li{margin:.2em 0}
+.msg-bubble .md blockquote{
+  border-left:3px solid var(--accent);
+  padding:.4em 1em;margin:.8em 0;
+  background:var(--bg3);border-radius:0 var(--radius-s) var(--radius-s) 0;
+  color:var(--text2);
+}
+.msg-bubble .md table{border-collapse:collapse;width:100%;margin:.8em 0;font-size:13px}
+.msg-bubble .md th,.msg-bubble .md td{border:1px solid var(--border2);padding:6px 10px;text-align:left}
+.msg-bubble .md th{background:var(--bg3);font-weight:600}
+.msg-bubble .md tr:hover{background:var(--bg3)}
+.msg-bubble .md code:not(.hljs){
+  background:var(--bg4);border:1px solid var(--border);
+  padding:1px 6px;border-radius:4px;
+  font-family:var(--mono);font-size:.88em;color:#e5c07b;
+}
+.msg-bubble .md a{color:var(--accent-h)}
+.msg-bubble .md hr{border:none;border-top:1px solid var(--border);margin:1em 0}
+
+/* Code blocks */
+.code-block{
+  position:relative;border-radius:var(--radius-s);overflow:hidden;
+  margin:.8em 0;font-size:13px;
+  border:1px solid var(--border);
+}
+.code-block-header{
+  display:flex;align-items:center;justify-content:space-between;
+  background:#161b22;padding:6px 14px;
+  font-size:11px;color:var(--text2);
+  border-bottom:1px solid var(--border);
+}
+.code-copy-btn{
+  background:none;border:1px solid var(--border);
+  color:var(--text2);cursor:pointer;padding:3px 10px;
+  border-radius:4px;font-size:11px;
+  transition:background var(--transition),color var(--transition);
+}
+.code-copy-btn:hover{background:var(--bg4);color:var(--text)}
+.code-block pre{margin:0!important;border-radius:0!important;background:#0d1117!important}
+.code-block pre code{font-family:var(--mono)!important;font-size:13px!important;line-height:1.6!important}
+
+/* ─── Input Area ─────────────────────────────────────────────────────────── */
+#input-area{
+  border-top:1px solid var(--border);
+  background:var(--bg);
+  padding:12px 16px 12px;
+  flex-shrink:0;
+}
+#input-area-inner{
+  max-width:820px;margin:0 auto;
+  display:flex;flex-direction:column;gap:8px;
+}
+
+/* Attached files preview */
+#attached-files{
+  display:flex;flex-wrap:wrap;gap:6px;
+  padding-bottom:4px;
+}
+.attach-chip{
+  display:flex;align-items:center;gap:5px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:6px;padding:4px 10px;font-size:12px;
+  max-width:180px;
+}
+.attach-chip span{
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;
+  color:var(--text2);
+}
+.attach-chip-rm{
+  background:none;border:none;color:var(--text3);
+  cursor:pointer;padding:0 2px;
+  transition:color var(--transition);flex-shrink:0;
+}
+.attach-chip-rm:hover{color:var(--danger)}
+
+/* Input row */
+#input-row{
+  display:flex;align-items:flex-end;gap:6px;
+}
+#input-btns-left{display:flex;align-items:center;gap:4px;flex-shrink:0}
+#input-btns-right{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.input-icon-btn{
+  background:none;border:1px solid var(--border);
+  color:var(--text2);cursor:pointer;
+  padding:9px;border-radius:var(--radius-s);
+  transition:background var(--transition),color var(--transition),border-color var(--transition);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.input-icon-btn:hover{background:var(--bg3);color:var(--text);border-color:var(--border2)}
+.input-icon-btn.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+.input-icon-btn:disabled{opacity:.4;cursor:not-allowed}
+#input-box-wrap{
+  flex:1;position:relative;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  transition:border-color var(--transition),box-shadow var(--transition);
+  display:flex;align-items:flex-end;
+}
+#input-box-wrap:focus-within{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(88,101,242,.12);
+}
+#message-input{
+  flex:1;background:none;border:none;outline:none;
+  color:var(--text);
+  padding:11px 14px;
+  font-size:14.5px;line-height:1.6;
+  resize:none;
+  max-height:200px;overflow-y:auto;
+  min-height:44px;
+}
+#message-input::placeholder{color:var(--text3)}
+#send-btn{
+  width:38px;height:38px;border-radius:10px;margin:3px;
+  background:var(--accent);border:none;
+  color:#fff;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background var(--transition),opacity var(--transition),transform var(--transition);
+  flex-shrink:0;
+}
+#send-btn:hover{background:var(--accent-h);transform:scale(1.05)}
+#send-btn:active{transform:scale(.95)}
+#send-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+#send-btn.stop-mode{background:var(--danger)}
+#send-btn.stop-mode:hover{background:#dc2626}
+.input-hint{
+  font-size:11px;color:var(--text3);text-align:center;
+  padding-top:2px;
+}
+
+/* ─── Voice recording overlay ────────────────────────────────────────────── */
+#voice-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.82);backdrop-filter:blur(8px);
+  display:none;flex-direction:column;
+  align-items:center;justify-content:center;
+  z-index:1000;
+  transition:background .2s;
+}
+#voice-overlay.active{display:flex}
+#voice-overlay.cancel-zone-active{background:rgba(180,20,20,.55)}
+
+/* ── Recording pane ── */
+#vso-recording{
+  display:flex;flex-direction:column;align-items:center;gap:0;
+  user-select:none;pointer-events:none;
+}
+/* Waveform bars */
+.voice-waveform{
+  display:flex;align-items:center;gap:5px;height:54px;
+}
+.voice-waveform span{
+  display:inline-block;width:5px;border-radius:4px;
+  background:var(--danger);
+  animation:waveBar 1s ease-in-out infinite alternate;
+  transform-origin:center bottom;
+}
+.voice-waveform span:nth-child(1){height:18px;animation-delay:.0s}
+.voice-waveform span:nth-child(2){height:32px;animation-delay:.1s}
+.voice-waveform span:nth-child(3){height:46px;animation-delay:.2s}
+.voice-waveform span:nth-child(4){height:54px;animation-delay:.3s}
+.voice-waveform span:nth-child(5){height:46px;animation-delay:.2s}
+.voice-waveform span:nth-child(6){height:32px;animation-delay:.1s}
+.voice-waveform span:nth-child(7){height:18px;animation-delay:.0s}
+@keyframes waveBar{
+  0%  {transform:scaleY(.3);opacity:.6}
+  100%{transform:scaleY(1); opacity:1}
+}
+.voice-timer{
+  font-size:32px;font-weight:700;color:#fff;
+  margin-top:18px;letter-spacing:.04em;
+  font-variant-numeric:tabular-nums;
+}
+.voice-rec-label{
+  font-size:14px;color:rgba(255,255,255,.7);margin-top:6px;
+}
+.voice-swipe-area{
+  margin-top:36px;
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+}
+.voice-swipe-arrow{
+  font-size:22px;color:rgba(255,255,255,.5);
+  animation:swipeArrow 1.2s ease-in-out infinite;
+}
+@keyframes swipeArrow{0%,100%{transform:translateY(4px);opacity:.5}50%{transform:translateY(-4px);opacity:1}}
+#voice-swipe-hint{
+  font-size:13px;color:rgba(255,255,255,.55);
+  transition:color .15s,font-size .15s;
+}
+#voice-overlay.cancel-zone-active #voice-swipe-hint{
+  color:#ff9999;font-size:16px;font-weight:600;
+}
+
+/* ── Recognizing pane ── */
+#vso-recognizing{
+  display:none;flex-direction:column;align-items:center;gap:20px;
+}
+.voice-spinner-lg{
+  width:54px;height:54px;
+  border:4px solid rgba(255,255,255,.15);
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:spin .9s linear infinite;
+}
+.voice-recog-label{
+  font-size:16px;color:rgba(255,255,255,.85);
+}
+.voice-abort-btn{
+  margin-top:8px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);
+  color:rgba(255,255,255,.7);cursor:pointer;
+  padding:9px 28px;border-radius:99px;font-size:13px;
+  transition:background .15s,color .15s;
+  pointer-events:all;
+}
+.voice-abort-btn:hover{background:rgba(255,255,255,.18);color:#fff}
+
+/* ── Permission denied dialog ── */
+#voice-perm-denied{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.7);z-index:2100;
+  align-items:center;justify-content:center;
+}
+#voice-perm-denied.active{display:flex}
+.perm-denied-msg{color:var(--text2);font-size:13.5px;line-height:1.7;margin:.8em 0 1.2em}
+.perm-steps{
+  display:flex;flex-direction:column;gap:8px;
+  background:var(--bg3);border-radius:var(--radius-s);
+  padding:12px 14px;margin-bottom:16px;
+}
+.perm-step{
+  display:flex;align-items:center;gap:10px;
+  font-size:13px;color:var(--text);
+}
+.perm-step span{
+  width:20px;height:20px;border-radius:50%;
+  background:var(--accent-soft);border:1px solid var(--accent);
+  color:var(--accent);font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+
+/* ── Voice button states ── */
+#voice-btn.recognizing{
+  background:var(--accent-soft);color:var(--accent);
+  border-color:var(--accent);
+  animation:none;
+}
+#voice-btn .voice-btn-ring{display:none}
+#voice-btn.active .voice-btn-ring{
+  display:block;position:absolute;inset:-5px;
+  border-radius:50%;border:2px solid var(--danger);
+  animation:voiceBtnPulse 1s ease-out infinite;
+}
+@keyframes voiceBtnPulse{
+  0%  {opacity:1;transform:scale(1)}
+  100%{opacity:0;transform:scale(1.6)}
+}
+#voice-btn{position:relative}
+
+/* ─── Sidebar overlay (mobile) ───────────────────────────────────────────── */
+#sidebar-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.6);z-index:99;
+}
+
+/* ─── Toast ──────────────────────────────────────────────────────────────── */
+#toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+  background:var(--bg4);color:var(--text);
+  padding:10px 18px;border-radius:8px;
+  font-size:13px;pointer-events:none;
+  opacity:0;transition:opacity .3s;
+  z-index:9999;white-space:nowrap;
+  border:1px solid var(--border2);
+}
+#toast.show{opacity:1}
+#toast.error{background:rgba(239,68,68,.15);border-color:var(--danger);color:var(--danger)}
+#toast.ok{background:rgba(34,197,94,.15);border-color:var(--ok);color:var(--ok)}
+
+/* ─── Rename dialog ──────────────────────────────────────────────────────── */
+#rename-dialog{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.7);z-index:2000;
+  align-items:center;justify-content:center;
+}
+#rename-dialog.active{display:flex}
+.dialog-box{
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:var(--radius);padding:24px;
+  width:min(400px,90vw);
+  box-shadow:var(--shadow);
+}
+.dialog-box h3{font-size:16px;font-weight:600;margin-bottom:16px}
+.dialog-box input{
+  width:100%;background:var(--bg3);border:1px solid var(--border2);
+  border-radius:var(--radius-s);padding:10px 14px;
+  color:var(--text);font-size:14px;outline:none;
+  transition:border-color var(--transition);
+}
+.dialog-box input:focus{border-color:var(--accent)}
+.dialog-btns{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+.dialog-btn{
+  padding:9px 20px;border-radius:var(--radius-s);
+  cursor:pointer;font-size:13px;font-weight:500;
+  border:none;transition:background var(--transition);
+}
+.dialog-btn.cancel{background:var(--bg4);color:var(--text2)}
+.dialog-btn.cancel:hover{background:var(--border2);color:var(--text)}
+.dialog-btn.confirm{background:var(--accent);color:#fff}
+.dialog-btn.confirm:hover{background:var(--accent-h)}
+
+/* ─── Loading spinner ────────────────────────────────────────────────────── */
+.spinner{
+  width:18px;height:18px;border:2px solid var(--border);
+  border-top-color:var(--accent);border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ─── Responsive / Mobile ────────────────────────────────────────────────── */
+@media(max-width:767px){
+  #sidebar{
+    position:fixed;top:0;left:0;bottom:0;
+    transform:translateX(-100%);
+    box-shadow:var(--shadow);
+  }
+  #sidebar.open{transform:translateX(0)}
+  #sidebar-overlay.show{display:block}
+  #menu-btn{display:flex;align-items:center;justify-content:center}
+  .suggestion-grid{grid-template-columns:1fr}
+  #messages{padding:0 12px}
+  .msg-body{max-width:92%}
+  #input-area{padding:10px 10px 10px}
+}
+@media(min-width:768px){
+  #sidebar{position:relative;transform:none!important}
+}
+
+/* ─── Liquid Glass Theme Override ───────────────────────────────────────── */
+:root{
+  --bg:           #edf0f4;
+  --bg2:          rgba(255,255,255,.72);
+  --bg3:          rgba(255,255,255,.56);
+  --bg4:          rgba(233,238,248,.96);
+  --border:       rgba(14,30,58,.12);
+  --border2:      rgba(14,30,58,.2);
+  --text:         #111827;
+  --text2:        #5b6473;
+  --text3:        #8b93a3;
+  --accent:       #4f70ff;
+  --accent-h:     #395cf0;
+  --accent-soft:  rgba(79,112,255,.17);
+  --user-bg:      linear-gradient(120deg,#4f70ff,#6c8bff);
+  --user-text:    #fff;
+  --sidebar-w:    286px;
+  --header-h:     64px;
+  --radius:       20px;
+  --radius-s:     12px;
+  --shadow:       0 18px 45px rgba(17,24,39,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:           #12161f;
+    --bg2:          rgba(27,33,45,.7);
+    --bg3:          rgba(33,39,52,.56);
+    --bg4:          rgba(25,30,40,.94);
+    --border:       rgba(215,225,255,.12);
+    --border2:      rgba(215,225,255,.22);
+    --text:         #eef2ff;
+    --text2:        #b6bdd0;
+    --text3:        #7e879d;
+    --accent:       #86a2ff;
+    --accent-h:     #aac0ff;
+    --accent-soft:  rgba(134,162,255,.18);
+    --user-bg:      linear-gradient(130deg,#4d6df7,#7d9bff);
+    --shadow:       0 18px 52px rgba(0,0,0,.42);
+  }
+}
+html,body{
+  background:
+    radial-gradient(1100px 560px at 82% -8%, rgba(79,112,255,.2), transparent 65%),
+    radial-gradient(900px 500px at -8% 108%, rgba(125,151,255,.18), transparent 70%),
+    var(--bg);
+}
+#app{position:relative;isolation:isolate}
+#main{
+  background:transparent;
+  display:flex;
+  min-height:0;
+}
+#header{
+  height:var(--header-h);
+  border-bottom:none;
+  background:transparent;
+  padding:0 20px;
+  position:relative;
+}
+#chat-title{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  max-width:min(72vw,420px);
+  text-align:center;
+  font-size:20px;
+  font-weight:650;
+  letter-spacing:.01em;
+}
+#menu-btn,.header-btn{
+  width:42px;height:42px;
+  border:1px solid var(--border);
+  background:var(--bg2);
+  color:var(--text);
+  border-radius:999px;
+  backdrop-filter:blur(20px) saturate(150%);
+}
+.header-actions{gap:10px}
+.model-badge{display:none}
+#messages-wrap{
+  padding:8px 0 220px;
+}
+#messages{
+  max-width:900px;
+}
+#welcome{
+  min-height:64vh;
+}
+.welcome-logo{
+  width:84px;height:84px;
+  border-radius:26px;
+  color:var(--accent);
+  background:var(--bg2);
+  border:1px solid var(--border);
+  backdrop-filter:blur(18px) saturate(155%);
+  box-shadow:var(--shadow);
+}
+.welcome-logo svg{width:56px;height:56px}
+#welcome h1{
+  font-size:48px;
+  font-weight:700;
+  line-height:1.18;
+}
+#welcome p{
+  font-size:17px;
+  color:var(--text2);
+}
+.suggestion-grid{
+  width:min(620px,100%);
+  margin-top:24px;
+  gap:12px;
+}
+.suggestion-card{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  backdrop-filter:blur(18px) saturate(150%);
+  box-shadow:0 8px 22px rgba(17,24,39,.05);
+}
+.suggestion-card:hover{
+  background:var(--bg3);
+  border-color:var(--border2);
+  transform:translateY(-1px);
+}
+#sidebar{
+  background:var(--bg2);
+  border-right:1px solid var(--border);
+  backdrop-filter:blur(20px) saturate(150%);
+}
+#input-area{
+  border-top:none;
+  background:transparent;
+  padding:0 18px max(16px,env(safe-area-inset-bottom));
+  position:fixed;
+  left:0;right:0;bottom:0;
+  pointer-events:none;
+}
+#input-area-inner{
+  pointer-events:all;
+  max-width:920px;
+}
+#input-shell{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:32px;
+  backdrop-filter:blur(26px) saturate(160%);
+  box-shadow:var(--shadow);
+  padding:14px 14px 12px;
+}
+#attached-files{
+  margin-bottom:8px;
+}
+.attach-chip{
+  border-radius:999px;
+  background:var(--bg3);
+}
+#input-box-wrap{
+  background:transparent;
+  border:none;
+  box-shadow:none;
+  border-radius:20px;
+  display:block;
+}
+#input-box-wrap:focus-within{
+  border:none;
+  box-shadow:none;
+}
+#message-input{
+  min-height:52px;
+  max-height:190px;
+  padding:10px 12px 8px;
+  font-size:18px;
+  line-height:1.4;
+}
+#input-toolbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+#input-modes{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+.mode-pill{
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:var(--bg3);
+  color:var(--text);
+  padding:9px 16px;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all var(--transition);
+  white-space:nowrap;
+}
+.mode-pill:hover{
+  border-color:var(--border2);
+}
+.mode-pill.active{
+  background:var(--accent-soft);
+  border-color:rgba(79,112,255,.35);
+  color:var(--accent);
+}
+#input-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.input-icon-btn{
+  width:42px;
+  height:42px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:var(--bg3);
+  color:var(--text);
+  padding:0;
+}
+#send-btn{
+  width:42px;
+  height:42px;
+  border-radius:999px;
+  margin:0;
+  background:var(--accent);
+}
+#send-btn:hover{transform:none}
+#send-btn.stop-mode{
+  background:var(--danger);
+}
+.input-hint{
+  text-align:left;
+  font-size:11px;
+  padding:4px 2px 0;
+}
+.msg.assistant .msg-bubble,
+.dialog-box,
+#toast{
+  background:var(--bg2);
+  border-color:var(--border);
+  backdrop-filter:blur(18px) saturate(150%);
+}
+.msg.user .msg-bubble{
+  background:var(--user-bg);
+}
+@media (max-width:980px){
+  #chat-title{font-size:20px}
+  #welcome h1{font-size:42px}
+}
+@media(max-width:767px){
+  #sidebar{
+    position:fixed;
+    top:0;left:0;bottom:0;
+    transform:translateX(-100%);
+    box-shadow:var(--shadow);
+  }
+  #sidebar.open{transform:translateX(0)}
+  #sidebar-overlay.show{display:block}
+  #menu-btn{display:flex;align-items:center;justify-content:center}
+  #header{padding:0 14px}
+  #chat-title{
+    font-size:22px;
+  }
+  #messages{
+    padding:0 14px;
+  }
+  #welcome{
+    padding:20px 12px;
+    min-height:58vh;
+  }
+  #welcome h1{
+    font-size:22px;
+  }
+  #welcome p{
+    font-size:14px;
+  }
+  .suggestion-grid{
+    grid-template-columns:1fr;
+  }
+  .suggestion-card{
+    padding:12px 14px;
+  }
+  #input-area{
+    padding:0 10px max(10px,env(safe-area-inset-bottom));
+  }
+  #input-shell{
+    border-radius:26px;
+    padding:12px 10px 10px;
+  }
+  #message-input{
+    font-size:16px;
+    min-height:48px;
+  }
+  .mode-pill{
+    padding:8px 12px;
+    font-size:13px;
+  }
+  .input-hint{
+    text-align:center;
+    padding-top:2px;
+  }
+}
+</style>
+</head>
+
+<body>
+<div id="app">
+
+  <!-- ──── Sidebar ──────────────────────────────────────────────────────── -->
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <button id="new-chat-btn" onclick="startNewChat()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        新对话
+      </button>
+    </div>
+    <div id="sidebar-search">
+      <input id="search-input" type="search" placeholder="搜索对话…" autocomplete="off" oninput="filterConversations(this.value)">
+    </div>
+    <div id="conversation-list"></div>
+    <div id="sidebar-footer">
+      <button class="sidebar-footer-btn" onclick="clearAllChats()" title="清除所有对话">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        清除全部
+      </button>
+    </div>
+  </aside>
+
+  <!-- Sidebar overlay for mobile -->
+  <div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+  <!-- ──── Main ─────────────────────────────────────────────────────────── -->
+  <main id="main">
+    <!-- Header -->
+    <header id="header">
+      <button id="menu-btn" onclick="toggleSidebar()" aria-label="菜单">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <span id="chat-title" onclick="openRenameDialog()" title="点击重命名">新对话</span>
+      <div class="header-actions">
+        <button class="header-btn" onclick="copyConversation()" title="复制对话">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+        <button class="header-btn" onclick="startNewChat()" title="新对话">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Messages -->
+    <div id="messages-wrap" onscroll="handleScroll()">
+      <div id="messages">
+        <!-- Welcome screen -->
+        <div id="welcome">
+          <div class="welcome-logo">
+            <svg viewBox="0 0 64 64" fill="none">
+              <path d="M8 36c0-11.2 9.1-20.2 20.2-20.2 7.2 0 13.9 3.8 17.5 10 4.3.2 8.5 2 10.3 5.1-1.8 3.4-5.9 5.4-10.3 5.7-3.9 7.2-11.3 11.8-19.4 11.8C16.3 48.4 8 42.7 8 36Z" fill="currentColor" opacity=".14"/>
+              <path d="M46 25c1.8 2.3 2.9 5.2 2.9 8.3 0 7.6-6.3 13.8-14 13.8-5.8 0-10.8-3.5-12.9-8.5-5.4-.7-9.7-2.9-12-6.2 2.6-4 7.4-6.4 13.4-6.6 2.6-4.9 7.7-8.2 13.6-8.2 3.5 0 6.7 1.2 9.1 3.3" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="30.5" cy="31.5" r="1.6" fill="currentColor"/>
+              <path d="M36.5 35.7c1 .8 2.2 1.2 3.5 1.2" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+              <path d="M46.8 29.2l5.7-5.2M47.3 36.8l6.2 4.7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h1>今天有什么可以帮到你？</h1>
+          <p>支持文本、语音与附件上传。你可以直接输入问题，或者先选择一个模式开始。</p>
+          <div class="suggestion-grid">
+            <div class="suggestion-card" onclick="setSuggestion('帮我做一次结构化深度思考，拆解问题并给出步骤方案')">
+              <h4>深度思考</h4>
+              <p>拆解问题、给出步骤、提供可执行方案</p>
+            </div>
+            <div class="suggestion-card" onclick="setSuggestion('先联网搜索最新信息，再给我结论和关键来源')">
+              <h4>智能搜索</h4>
+              <p>先检索，再总结，附关键信息来源</p>
+            </div>
+            <div class="suggestion-card" onclick="setSuggestion('帮我写一封语气专业但友好的工作邮件')">
+              <h4>写作润色</h4>
+              <p>邮件、公告、文案一键生成与润色</p>
+            </div>
+            <div class="suggestion-card" onclick="setSuggestion('帮我规划一个 7 天学习计划，按每天 1 小时安排')">
+              <h4>计划安排</h4>
+              <p>分天执行，清晰节奏，带可衡量目标</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input area -->
+    <div id="input-area">
+      <div id="input-area-inner">
+        <div id="input-shell">
+          <!-- Attached files preview -->
+          <div id="attached-files" style="display:none"></div>
+          <div id="input-box-wrap">
+            <textarea id="message-input"
+              placeholder="发消息或按住说话"
+              rows="1"
+              onkeydown="handleKeyDown(event)"
+              oninput="autoResize(this)"
+            ></textarea>
+          </div>
+
+          <div id="input-toolbar">
+            <div id="input-modes">
+              <button class="mode-pill" type="button" onclick="setSuggestion('帮我做一次结构化深度思考，拆解问题并给出步骤方案')">深度思考</button>
+              <button class="mode-pill active" type="button" onclick="setSuggestion('先联网搜索最新信息，再给我结论和关键来源')">智能搜索</button>
+            </div>
+
+            <div id="input-actions">
+              <button class="input-icon-btn" id="upload-btn" onclick="triggerUpload()" title="添加附件">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </button>
+              <input type="file" id="file-input" style="display:none" multiple accept=".pdf,.doc,.docx,.txt,.csv,.png,.jpg,.jpeg,.gif,.webp,.xlsx,.pptx" onchange="handleFileSelect(this.files)">
+
+              <!-- Pre-auth button: shown when mic permission not yet granted -->
+              <button class="input-icon-btn" id="voice-perm-btn"
+                onclick="vsRequestPermission()"
+                title="点击预授权麦克风，避免录音时弹窗干扰"
+                style="display:none"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                授权
+                <span class="perm-badge"></span>
+              </button>
+
+              <button class="input-icon-btn" id="voice-btn"
+                title="按住说话"
+                onpointerdown="vsmPointerDown(event)"
+                onpointerup="vsmPointerUp(event)"
+                onpointermove="vsmPointerMove(event)"
+                onpointercancel="vsmPointerCancel(event)"
+              >
+                <!-- Pulse ring (shown only while recording) -->
+                <span class="voice-btn-ring"></span>
+                <!-- Mic icon -->
+                <svg id="voice-btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                  <line x1="12" y1="19" x2="12" y2="23"/>
+                  <line x1="8"  y1="23" x2="16" y2="23"/>
+                </svg>
+                <!-- Requesting-permission spinner -->
+                <div id="voice-btn-spinner" class="spinner" style="display:none"></div>
+              </button>
+
+              <button id="send-btn" onclick="onSendOrStop()" title="发送 (Enter)">
+                <!-- Send icon -->
+                <svg id="send-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                <!-- Stop icon -->
+                <svg id="stop-icon" style="display:none" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="input-hint">Enter 发送 · Shift+Enter 换行</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ──── Voice overlay ──────────────────────────────────────────────────── -->
+<div id="voice-overlay">
+
+  <!-- Pane 1: Recording -->
+  <div id="vso-recording">
+    <div class="voice-waveform">
+      <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <div class="voice-timer" id="voice-timer">0:00</div>
+    <div class="voice-rec-label">正在录音</div>
+    <div class="voice-swipe-area">
+      <div class="voice-swipe-arrow">↑</div>
+      <div id="voice-swipe-hint">↑ 上滑取消</div>
+    </div>
+  </div>
+
+  <!-- Pane 2: Recognizing -->
+  <div id="vso-recognizing">
+    <div class="voice-spinner-lg"></div>
+    <div class="voice-recog-label">识别中，请稍候…</div>
+    <button class="voice-abort-btn" onclick="vsAbortAsr()">取消</button>
+  </div>
+
+</div>
+
+<!-- ──── Permission denied dialog ──────────────────────────────────────── -->
+<div id="voice-perm-denied">
+  <div class="dialog-box">
+    <h3>🎤 无法访问麦克风</h3>
+    <p class="perm-denied-msg">浏览器麦克风权限已被拒绝，请按以下步骤开启，刷新页面后即可使用语音功能。</p>
+    <div class="perm-steps">
+      <div class="perm-step"><span>1</span> 点击地址栏左侧的 🔒 锁形图标</div>
+      <div class="perm-step"><span>2</span> 找到「麦克风」，将其设为「允许」</div>
+      <div class="perm-step"><span>3</span> 刷新页面后重试</div>
+    </div>
+    <div class="dialog-btns">
+      <button class="dialog-btn cancel"   onclick="closePermDenied()">关闭</button>
+      <button class="dialog-btn confirm"  onclick="closePermDenied()">我知道了</button>
+    </div>
+  </div>
+</div>
+
+<!-- ──── Rename dialog ──────────────────────────────────────────────────── -->
+<div id="rename-dialog">
+  <div class="dialog-box">
+    <h3>重命名对话</h3>
+    <input id="rename-input" type="text" placeholder="输入新名称" maxlength="80" onkeydown="e=>{if(e.key==='Enter')confirmRename()}" />
+    <div class="dialog-btns">
+      <button class="dialog-btn cancel" onclick="closeRenameDialog()">取消</button>
+      <button class="dialog-btn confirm" onclick="confirmRename()">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- ──── Toast ──────────────────────────────────────────────────────────── -->
+<div id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   APP STATE
+════════════════════════════════════════════════════════════════════════════ */
+let currentConvId     = null;
+let conversations     = [];
+let isGenerating      = false;
+let abortCtrl         = null;
+let currentTaskId     = null;
+let attachedFiles     = [];   // {id, name, size, type, mimeType}
+let atBottom          = true; // auto-scroll flag
+let searchQuery       = '';
+
+// Voice — state machine vars (see vsm* functions below)
+// All voice state lives in the VSM section; no loose vars here.
+
+// Regenerate tracking
+let lastUserQuery = '';
+let lastUserFiles = [];
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', async () => {
+  applySystemThemeColor();
+  const mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  if (mq) {
+    if (mq.addEventListener) mq.addEventListener('change', applySystemThemeColor);
+    else if (mq.addListener) mq.addListener(applySystemThemeColor);
+  }
+
+  // Configure marked
+  marked.setOptions({
+    breaks: true,
+    gfm: true,
+    highlight: (code, lang) => {
+      if (lang && hljs.getLanguage(lang)) {
+        return hljs.highlight(code, {language: lang}).value;
+      }
+      return hljs.highlightAuto(code).value;
+    }
+  });
+
+  // Restore last conversation
+  const lastId = localStorage.getItem('lastConvId');
+  await loadConversations();
+  if (lastId && conversations.find(c => c.id === lastId)) {
+    await selectConversation(lastId);
+  }
+
+  // Voice permission button initial state
+  // Check if permission already granted via Permissions API (no prompt needed)
+  if (navigator.permissions?.query) {
+    navigator.permissions.query({name: 'microphone'}).then(result => {
+      vsPermission = result.state === 'granted' ? 'granted'
+                   : result.state === 'denied'  ? 'denied'
+                   : 'unknown';
+      updatePermButton();
+      result.onchange = () => {
+        vsPermission = result.state === 'granted' ? 'granted'
+                     : result.state === 'denied'  ? 'denied'
+                     : 'unknown';
+        updatePermButton();
+      };
+    }).catch(() => updatePermButton());
+  } else {
+    updatePermButton();
+  }
+
+  // Mobile viewport fix
+  const setVH = () => {
+    document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+  };
+  setVH();
+  window.addEventListener('resize', setVH);
+});
+
+function applySystemThemeColor() {
+  const meta = document.getElementById('theme-color-meta');
+  if (!meta || !window.matchMedia) return;
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  meta.setAttribute('content', isDark ? '#141924' : '#f4f6fb');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   API HELPERS
+════════════════════════════════════════════════════════════════════════════ */
+async function apiFetch(url, opts={}) {
+  const resp = await fetch(url, opts);
+  if (!resp.ok) {
+    const txt = await resp.text().catch(() => '');
+    throw new Error(`HTTP ${resp.status}: ${txt.slice(0,200)}`);
+  }
+  return resp.json();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONVERSATIONS
+════════════════════════════════════════════════════════════════════════════ */
+async function loadConversations() {
+  try {
+    conversations = await apiFetch('/api/conversations');
+    renderSidebar();
+  } catch(e) {
+    console.error('loadConversations:', e);
+  }
+}
+
+function filterConversations(q) {
+  searchQuery = q.toLowerCase();
+  renderSidebar();
+}
+
+function groupByDate(convs) {
+  const now   = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yest  = new Date(today - 864e5);
+  const w7    = new Date(today - 7*864e5);
+  const d30   = new Date(today - 30*864e5);
+
+  const grps = [['今天',[]],['昨天',[]],['最近 7 天',[]],['最近 30 天',[]],['更早',[]]];
+  for (const c of convs) {
+    const d = new Date(c.updated_at || c.created_at);
+    if (d >= today)     grps[0][1].push(c);
+    else if (d >= yest) grps[1][1].push(c);
+    else if (d >= w7)   grps[2][1].push(c);
+    else if (d >= d30)  grps[3][1].push(c);
+    else                grps[4][1].push(c);
+  }
+  return grps.filter(([,a]) => a.length);
+}
+
+function renderSidebar() {
+  const el = document.getElementById('conversation-list');
+  let filtered = conversations;
+  if (searchQuery) filtered = conversations.filter(c => c.title.toLowerCase().includes(searchQuery));
+
+  if (!filtered.length) {
+    el.innerHTML = `<div class="no-convs">${searchQuery ? '没有匹配的对话' : '暂无对话记录'}</div>`;
+    return;
+  }
+
+  const groups = groupByDate(filtered);
+  let html = '';
+  for (const [label, convs] of groups) {
+    html += `<div class="conv-group-label">${label}</div>`;
+    for (const c of convs) {
+      const active = c.id === currentConvId ? 'active' : '';
+      html += `
+        <div class="conv-item ${active}" data-id="${c.id}">
+          <span class="conv-title">${escHtml(c.title)}</span>
+          <button class="conv-del" data-id="${c.id}" title="删除">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+            </svg>
+          </button>
+        </div>`;
+    }
+  }
+  el.innerHTML = html;
+
+  el.querySelectorAll('.conv-item').forEach(item => {
+    item.addEventListener('click', e => {
+      if (!e.target.closest('.conv-del')) selectConversation(item.dataset.id);
+    });
+  });
+  el.querySelectorAll('.conv-del').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      deleteConversation(btn.dataset.id);
+    });
+  });
+}
+
+async function selectConversation(id) {
+  if (id === currentConvId) { closeSidebar(); return; }
+  currentConvId = id;
+  localStorage.setItem('lastConvId', id);
+
+  const conv = conversations.find(c => c.id === id);
+  setTitle(conv ? conv.title : '对话');
+
+  clearMessages();
+  renderSidebar();
+
+  // Load messages
+  try {
+    const msgs = await apiFetch(`/api/conversations/${id}/messages`);
+    hideWelcome();
+    for (const m of msgs) addMessage(m.role, m.content, false, m.files || []);
+    scrollBottom(true);
+  } catch(e) { showToast('加载失败: ' + e.message, 'error'); }
+
+  closeSidebar();
+}
+
+async function deleteConversation(id) {
+  if (!confirm('确认删除这条对话记录？')) return;
+  try {
+    await apiFetch(`/api/conversations/${id}`, {method:'DELETE'});
+    conversations = conversations.filter(c => c.id !== id);
+    if (id === currentConvId) {
+      currentConvId = null;
+      localStorage.removeItem('lastConvId');
+      clearMessages();
+      showWelcome();
+      setTitle('新对话');
+    }
+    renderSidebar();
+    showToast('已删除', 'ok');
+  } catch(e) { showToast('删除失败', 'error'); }
+}
+
+async function clearAllChats() {
+  if (!confirm('确认清除所有对话记录？此操作不可恢复。')) return;
+  for (const c of [...conversations]) {
+    try { await apiFetch(`/api/conversations/${c.id}`, {method:'DELETE'}); } catch {}
+  }
+  conversations = [];
+  currentConvId = null;
+  localStorage.removeItem('lastConvId');
+  clearMessages();
+  showWelcome();
+  setTitle('新对话');
+  renderSidebar();
+  showToast('已清除', 'ok');
+}
+
+function startNewChat() {
+  currentConvId = null;
+  localStorage.removeItem('lastConvId');
+  clearMessages();
+  showWelcome();
+  setTitle('新对话');
+  attachedFiles = [];
+  renderAttached();
+  renderSidebar();
+  document.getElementById('message-input').focus();
+  closeSidebar();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CHAT
+════════════════════════════════════════════════════════════════════════════ */
+async function sendMessage() {
+  const inputEl = document.getElementById('message-input');
+  const query   = inputEl.value.trim();
+  if (!query && !attachedFiles.length) return;
+  if (isGenerating) return;
+
+  hideWelcome();
+  inputEl.value = '';
+  autoResize(inputEl);
+
+  const apiFiles = attachedFiles.map(f => ({
+    type:            f.type === 'image' ? 'image' : 'document',
+    transfer_method: 'local_file',
+    upload_file_id:  f.id,
+  }));
+  const displayFiles = [...attachedFiles];
+  attachedFiles = [];
+  renderAttached();
+
+  // Track for regenerate
+  lastUserQuery = query;
+  lastUserFiles = apiFiles;
+
+  // Hide regen on all previous AI messages (only last one gets it)
+  document.querySelectorAll('.regen-btn').forEach(b => b.style.display = 'none');
+
+  addMessage('user', query, false, displayFiles);
+  scrollBottom(true);
+  await doStream(query, apiFiles);
+}
+
+/* Called by sendMessage and regenerate – owns the SSE loop */
+async function doStream(query, apiFiles) {
+  const aiEl = addMessage('assistant', '', true);
+  scrollBottom(true);
+
+  isGenerating  = true;
+  currentTaskId = null;
+  updateSendBtn();
+  abortCtrl = new AbortController();
+
+  try {
+    const resp = await fetch('/api/chat', {
+      method:  'POST',
+      headers: {'Content-Type':'application/json'},
+      body:    JSON.stringify({query, conversation_id: currentConvId, files: apiFiles, user:'default_user'}),
+      signal:  abortCtrl.signal,
+    });
+
+    if (!resp.ok) {
+      const txt = await resp.text();
+      finishMessage(aiEl, true, `服务器错误 ${resp.status}: ${txt.slice(0,200)}`);
+      return;
+    }
+
+    const reader  = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let   buf     = '';
+
+    while (true) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, {stream:true});
+
+      const lines = buf.split('\n');
+      buf = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const raw = line.slice(6).trim();
+        if (!raw || raw === '[DONE]') continue;
+        let ev;
+        try { ev = JSON.parse(raw); } catch { continue; }
+
+        if (ev.type === 'start') {
+          if (!currentConvId) {
+            currentConvId = ev.conversation_id;
+            localStorage.setItem('lastConvId', currentConvId);
+          }
+        }
+        else if (ev.type === 'chunk') {
+          currentTaskId = ev.task_id || currentTaskId;
+          appendChunk(aiEl, ev.content);
+          if (atBottom) scrollBottom(false);
+        }
+        else if (ev.type === 'done') {
+          currentConvId = ev.conversation_id || currentConvId;
+          localStorage.setItem('lastConvId', currentConvId);
+          finishMessage(aiEl, false);
+          setTitle(ev.title || '新对话');
+          await loadConversations();
+        }
+        else if (ev.type === 'error') {
+          finishMessage(aiEl, true, ev.error);
+        }
+        else if (ev.type === 'stopped') {
+          finishMessage(aiEl, false);
+        }
+      }
+    }
+  } catch(e) {
+    if (e.name === 'AbortError') finishMessage(aiEl, false);
+    else                         finishMessage(aiEl, true, e.message);
+  } finally {
+    isGenerating = false;
+    abortCtrl    = null;
+    updateSendBtn();
+  }
+}
+
+/* Regenerate: remove last AI message bubble, re-stream with same query */
+async function regenerate(btn) {
+  if (isGenerating) return;
+  if (!lastUserQuery && !lastUserFiles.length) {
+    showToast('没有可重新生成的内容', 'error');
+    return;
+  }
+  btn.closest('.msg').remove();
+  document.querySelectorAll('.regen-btn').forEach(b => b.style.display = 'none');
+  await doStream(lastUserQuery, lastUserFiles);
+}
+
+async function stopGeneration() {
+  if (abortCtrl) abortCtrl.abort();
+  try {
+    await fetch('/api/chat/stop', {
+      method:  'POST',
+      headers: {'Content-Type':'application/json'},
+      body:    JSON.stringify({conversation_id: currentConvId, task_id: currentTaskId, user:'default_user'}),
+    });
+  } catch {}
+}
+
+function onSendOrStop() {
+  if (isGenerating) stopGeneration();
+  else              sendMessage();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MESSAGE DOM
+════════════════════════════════════════════════════════════════════════════ */
+/* ─── Think tag parsing ─────────────────────────────────────────────────── */
+// Handles <think>…</think> (DeepSeek / QwQ chain-of-thought format)
+function parseThinkContent(raw) {
+  const OPEN  = '<think>';
+  const CLOSE = '</think>';
+  const oi = raw.indexOf(OPEN);
+  if (oi === -1) return {think: null, answer: raw, isThinking: false};
+  const ci = raw.indexOf(CLOSE, oi);
+  if (ci === -1) {
+    // tag still open → still generating thought
+    return {think: raw.slice(oi + OPEN.length), answer: raw.slice(0, oi), isThinking: true};
+  }
+  return {
+    think:      raw.slice(oi + OPEN.length, ci),
+    answer:     raw.slice(0, oi) + raw.slice(ci + CLOSE.length),
+    isThinking: false,
+  };
+}
+
+function buildThinkBlockEl(thinkContent, isThinking) {
+  const el = document.createElement('div');
+  el.className = 'think-block open';
+  el.innerHTML = `
+    <div class="think-header" onclick="toggleThink(this)">
+      <svg class="think-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+      <span class="think-label">思考过程</span>
+      <span class="think-live" style="${isThinking ? '' : 'display:none'}">
+        <span class="think-live-dot"></span>思考中…
+      </span>
+    </div>
+    <div class="think-body">${renderMd(thinkContent.trim())}</div>`;
+  return el;
+}
+
+function toggleThink(header) {
+  header.closest('.think-block').classList.toggle('open');
+}
+
+/* ─── Message DOM ─────────────────────────────────────────────────────────── */
+function addMessage(role, content, isStreaming=false, files=[]) {
+  hideWelcome();
+
+  const wrap  = document.getElementById('messages');
+  const msgEl = document.createElement('div');
+  msgEl.className = `msg ${role}`;
+
+  const avatarSvg = role === 'assistant'
+    ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+         <path d="M8 12h.01M12 12h.01M16 12h.01" stroke-width="2.5" stroke-linecap="round"/>
+       </svg>`
+    : 'U';
+
+  // File chips (user side)
+  let fileHtml = '';
+  if (files && files.length) {
+    fileHtml = '<div class="msg-files">';
+    for (const f of files) {
+      const isImg = f.type === 'image' || /\.(png|jpe?g|gif|webp)$/i.test(f.name || '');
+      fileHtml += `<div class="file-chip ${isImg ? 'image' : ''}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          ${isImg
+            ? '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>'
+            : '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>'}
+        </svg>
+        <span class="file-chip-name">${escHtml(f.name || '文件')}</span>
+      </div>`;
+    }
+    fileHtml += '</div>';
+  }
+
+  let contentHtml;
+  if (role === 'user') {
+    contentHtml = `<div class="msg-bubble">${fileHtml}<div class="md-text">${escHtml(content).replace(/\n/g,'<br>')}</div></div>`;
+  } else {
+    // Non-streaming: parse think tags up-front for history messages
+    let thinkHtml   = '';
+    let answerMd    = content;
+    if (!isStreaming && content) {
+      const p = parseThinkContent(content);
+      if (p.think !== null) {
+        thinkHtml = buildThinkBlockEl(p.think, p.isThinking).outerHTML;
+        answerMd  = p.answer;
+      }
+    }
+    contentHtml = `
+      <div class="msg-bubble">
+        ${thinkHtml}
+        ${isStreaming
+          ? '<div class="thinking"><span></span><span></span><span></span></div>'
+          : `<div class="md">${renderMd(answerMd)}</div>`}
+      </div>
+      <div class="msg-actions" style="${isStreaming ? 'display:none' : ''}">
+        <button class="msg-action-btn" onclick="copyMsg(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          复制
+        </button>
+        <button class="msg-action-btn regen-btn" onclick="regenerate(this)" title="重新生成" style="display:none">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="1 4 1 10 7 10"/>
+            <path d="M3.51 15a9 9 0 1 0 .49-3.6"/>
+          </svg>
+          重新生成
+        </button>
+      </div>`;
+  }
+
+  msgEl.innerHTML = `
+    <div class="msg-avatar">${avatarSvg}</div>
+    <div class="msg-body">${contentHtml}</div>`;
+
+  wrap.appendChild(msgEl);
+  return msgEl;
+}
+
+function appendChunk(msgEl, chunk) {
+  const bubble = msgEl.querySelector('.msg-bubble');
+  if (!bubble) return;
+
+  bubble.querySelector('.thinking')?.remove();
+
+  if (!msgEl.__rawText) msgEl.__rawText = '';
+  msgEl.__rawText += chunk;
+
+  const {think, answer, isThinking} = parseThinkContent(msgEl.__rawText);
+
+  // ── Think block ──────────────────────────────────────────────────────────
+  if (think !== null) {
+    let thinkBlock = bubble.querySelector('.think-block');
+    if (!thinkBlock) {
+      thinkBlock = buildThinkBlockEl(think, isThinking);
+      bubble.prepend(thinkBlock);
+    } else {
+      const liveEl = thinkBlock.querySelector('.think-live');
+      if (liveEl) liveEl.style.display = isThinking ? '' : 'none';
+      const bodyEl = thinkBlock.querySelector('.think-body');
+      if (bodyEl) bodyEl.innerHTML = renderMd(think.trim());
+    }
+  }
+
+  // ── Answer ───────────────────────────────────────────────────────────────
+  let mdEl = bubble.querySelector('.md');
+  if (!mdEl) {
+    mdEl = document.createElement('div');
+    mdEl.className = 'md';
+    bubble.appendChild(mdEl);
+  }
+  mdEl.innerHTML = renderMd(answer) + '<span class="typing-cursor"></span>';
+  mdEl.querySelectorAll('pre code').forEach(el => {
+    if (!el.dataset.highlighted) try { hljs.highlightElement(el); } catch {}
+  });
+  mdEl.querySelectorAll('pre:not(.wrapped)').forEach(pre => wrapCodeBlock(pre));
+}
+
+function finishMessage(msgEl, isError=false, errText='') {
+  const bubble = msgEl.querySelector('.msg-bubble');
+  if (!bubble) return;
+
+  bubble.querySelector('.thinking')?.remove();
+  bubble.querySelector('.typing-cursor')?.remove();
+
+  const {think, answer} = parseThinkContent(msgEl.__rawText || '');
+
+  // Finalize think block
+  const thinkBlock = bubble.querySelector('.think-block');
+  if (thinkBlock) {
+    // Mark thinking done
+    const liveEl = thinkBlock.querySelector('.think-live');
+    if (liveEl) liveEl.style.display = 'none';
+    // Auto-collapse after answer arrives so the answer is in focus
+    if (answer && answer.trim()) thinkBlock.classList.remove('open');
+  } else if (think && !isError) {
+    bubble.prepend(buildThinkBlockEl(think, false));
+  }
+
+  let mdEl = bubble.querySelector('.md');
+  if (!mdEl) {
+    mdEl = document.createElement('div');
+    mdEl.className = 'md';
+    bubble.appendChild(mdEl);
+  }
+
+  if (isError) {
+    bubble.classList.add('error');
+    mdEl.innerHTML = `<span>⚠️ ${escHtml(errText || '请求失败，请重试')}</span>`;
+  } else {
+    const finalAnswer = (think !== null ? answer : (msgEl.__rawText || ''));
+    mdEl.innerHTML = renderMd(finalAnswer);
+    mdEl.querySelectorAll('pre:not(.wrapped)').forEach(pre => wrapCodeBlock(pre));
+    mdEl.querySelectorAll('pre code').forEach(el => {
+      try { hljs.highlightElement(el); } catch {}
+    });
+  }
+
+  // Show action bar
+  const actions = msgEl.querySelector('.msg-actions');
+  if (actions) actions.style.display = '';
+
+  // Show regenerate only on THIS (last) AI message, hide on others
+  if (!isError) {
+    document.querySelectorAll('.regen-btn').forEach(b => {
+      b.style.display = b.closest('.msg') === msgEl ? '' : 'none';
+    });
+  }
+}
+
+function renderMd(text) {
+  if (!text) return '';
+  try {
+    return marked.parse(text);
+  } catch {
+    return escHtml(text).replace(/\n/g,'<br>');
+  }
+}
+
+function wrapCodeBlock(pre) {
+  pre.classList.add('wrapped');
+  const code = pre.querySelector('code');
+  const lang  = (code?.className || '').replace('hljs language-','').replace('language-','').split(' ')[0] || 'code';
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'code-block';
+  wrapper.innerHTML = `<div class="code-block-header"><span>${lang}</span><button class="code-copy-btn" onclick="copyCode(this)">复制代码</button></div>`;
+  pre.parentNode.insertBefore(wrapper, pre);
+  wrapper.appendChild(pre);
+}
+
+function copyCode(btn) {
+  const pre = btn.closest('.code-block')?.querySelector('pre');
+  if (!pre) return;
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = '已复制!';
+    setTimeout(() => btn.textContent = '复制代码', 2000);
+  }).catch(() => showToast('复制失败', 'error'));
+}
+
+function copyMsg(btn) {
+  const bubble = btn.closest('.msg-body')?.querySelector('.md');
+  const text   = bubble ? bubble.innerText : '';
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('已复制到剪贴板', 'ok');
+  }).catch(() => showToast('复制失败', 'error'));
+}
+
+function copyConversation() {
+  const msgs = document.querySelectorAll('.msg');
+  let text = '';
+  msgs.forEach(m => {
+    const role  = m.classList.contains('user') ? '我' : 'AI';
+    const body  = m.querySelector('.md,.md-text')?.innerText || '';
+    if (body) text += `${role}: ${body}\n\n`;
+  });
+  navigator.clipboard.writeText(text.trim()).then(() => showToast('对话已复制', 'ok'));
+}
+
+function clearMessages() {
+  const wrap = document.getElementById('messages');
+  wrap.innerHTML = '';
+}
+
+function getWelcomeMarkup() {
+  return `
+    <div id="welcome">
+      <div class="welcome-logo">
+        <svg viewBox="0 0 64 64" fill="none">
+          <path d="M8 36c0-11.2 9.1-20.2 20.2-20.2 7.2 0 13.9 3.8 17.5 10 4.3.2 8.5 2 10.3 5.1-1.8 3.4-5.9 5.4-10.3 5.7-3.9 7.2-11.3 11.8-19.4 11.8C16.3 48.4 8 42.7 8 36Z" fill="currentColor" opacity=".14"/>
+          <path d="M46 25c1.8 2.3 2.9 5.2 2.9 8.3 0 7.6-6.3 13.8-14 13.8-5.8 0-10.8-3.5-12.9-8.5-5.4-.7-9.7-2.9-12-6.2 2.6-4 7.4-6.4 13.4-6.6 2.6-4.9 7.7-8.2 13.6-8.2 3.5 0 6.7 1.2 9.1 3.3" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="30.5" cy="31.5" r="1.6" fill="currentColor"/>
+          <path d="M36.5 35.7c1 .8 2.2 1.2 3.5 1.2" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          <path d="M46.8 29.2l5.7-5.2M47.3 36.8l6.2 4.7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <h1>今天有什么可以帮到你？</h1>
+      <p>支持文本、语音与附件上传。你可以直接输入问题，或者先选择一个模式开始。</p>
+      <div class="suggestion-grid">
+        <div class="suggestion-card" onclick="setSuggestion('帮我做一次结构化深度思考，拆解问题并给出步骤方案')"><h4>深度思考</h4><p>拆解问题、给出步骤、提供可执行方案</p></div>
+        <div class="suggestion-card" onclick="setSuggestion('先联网搜索最新信息，再给我结论和关键来源')"><h4>智能搜索</h4><p>先检索，再总结，附关键信息来源</p></div>
+        <div class="suggestion-card" onclick="setSuggestion('帮我写一封语气专业但友好的工作邮件')"><h4>写作润色</h4><p>邮件、公告、文案一键生成与润色</p></div>
+        <div class="suggestion-card" onclick="setSuggestion('帮我规划一个 7 天学习计划，按每天 1 小时安排')"><h4>计划安排</h4><p>分天执行，清晰节奏，带可衡量目标</p></div>
+      </div>
+    </div>`;
+}
+
+function showWelcome() {
+  const wrap = document.getElementById('messages');
+  if (!document.getElementById('welcome')) {
+    wrap.innerHTML = getWelcomeMarkup();
+  }
+}
+
+function hideWelcome() {
+  document.getElementById('welcome')?.remove();
+}
+
+function setSuggestion(text) {
+  const inp = document.getElementById('message-input');
+  inp.value = text;
+  autoResize(inp);
+  inp.focus();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCROLL
+════════════════════════════════════════════════════════════════════════════ */
+function scrollBottom(force=false) {
+  const wrap = document.getElementById('messages-wrap');
+  if (force || atBottom) {
+    wrap.scrollTop = wrap.scrollHeight;
+  }
+}
+
+function handleScroll() {
+  const wrap  = document.getElementById('messages-wrap');
+  const dist  = wrap.scrollHeight - wrap.scrollTop - wrap.clientHeight;
+  atBottom    = dist < 80;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   INPUT
+════════════════════════════════════════════════════════════════════════════ */
+function handleKeyDown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    if (!isGenerating) sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+}
+
+function updateSendBtn() {
+  const btn      = document.getElementById('send-btn');
+  const sendIcon = document.getElementById('send-icon');
+  const stopIcon = document.getElementById('stop-icon');
+  if (isGenerating) {
+    btn.classList.add('stop-mode');
+    sendIcon.style.display = 'none';
+    stopIcon.style.display = '';
+    btn.title = '停止生成';
+  } else {
+    btn.classList.remove('stop-mode');
+    sendIcon.style.display = '';
+    stopIcon.style.display = 'none';
+    btn.title = '发送 (Enter)';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FILE UPLOAD
+════════════════════════════════════════════════════════════════════════════ */
+function triggerUpload() {
+  document.getElementById('file-input').click();
+}
+
+async function handleFileSelect(fileList) {
+  for (const file of fileList) {
+    if (file.size > 50 * 1024 * 1024) {
+      showToast(`文件 ${file.name} 超过 50MB 限制`, 'error');
+      continue;
+    }
+    await uploadFile(file);
+  }
+  document.getElementById('file-input').value = '';
+}
+
+async function uploadFile(file) {
+  showToast(`上传中: ${file.name}…`);
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('user', 'default_user');
+  try {
+    const data = await fetch('/api/upload', {method:'POST', body:fd}).then(r => r.json());
+    if (data.id) {
+      const isImage = file.type.startsWith('image/');
+      attachedFiles.push({
+        id:       data.id,
+        name:     file.name,
+        size:     file.size,
+        type:     isImage ? 'image' : 'document',
+        mimeType: file.type,
+      });
+      renderAttached();
+      showToast(`${file.name} 已附加`, 'ok');
+    } else {
+      showToast(`上传失败: ${data.error || '未知错误'}`, 'error');
+    }
+  } catch(e) {
+    showToast(`上传失败: ${e.message}`, 'error');
+  }
+}
+
+function renderAttached() {
+  const el = document.getElementById('attached-files');
+  if (!attachedFiles.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = 'flex';
+  el.innerHTML = attachedFiles.map((f, i) => `
+    <div class="attach-chip">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        ${f.type === 'image'
+          ? '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>'
+          : '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>'}
+      </svg>
+      <span>${escHtml(f.name)}</span>
+      <button class="attach-chip-rm" onclick="removeAttached(${i})">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>`).join('');
+}
+
+function removeAttached(i) {
+  attachedFiles.splice(i, 1);
+  renderAttached();
+}
+
+// Drag & Drop on messages area
+document.addEventListener('DOMContentLoaded', () => {
+  const wrap = document.getElementById('messages-wrap');
+  wrap.addEventListener('dragover', e => { e.preventDefault(); wrap.style.outline = '2px dashed var(--accent)'; });
+  wrap.addEventListener('dragleave', () => { wrap.style.outline = ''; });
+  wrap.addEventListener('drop', e => {
+    e.preventDefault();
+    wrap.style.outline = '';
+    const files = e.dataTransfer.files;
+    if (files.length) handleFileSelect(files);
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   VOICE STATE MACHINE  (SR-1 → SR-5)
+
+   States:
+     idle → requesting_permission → recording → recognizing → idle
+                                  ↘ (denied)  ↗ (abort)
+
+   All transitions go through vsTransition() which drives the UI.
+   No state leaks: every error path calls vsTransition(VS.IDLE).
+════════════════════════════════════════════════════════════════════════════ */
+
+// ── Constants ────────────────────────────────────────────────────────────────
+const VS = Object.freeze({
+  IDLE:        'idle',
+  REQUESTING:  'requesting_permission',
+  RECORDING:   'recording',
+  RECOGNIZING: 'recognizing',
+});
+
+const ASR_ERRORS = Object.freeze({
+  MIC_NOT_SUPPORTED:     '浏览器不支持录音功能，请升级到最新版 Chrome 或 Safari',
+  HTTPS_REQUIRED:        '语音功能需要 HTTPS 访问，请联系管理员配置证书',
+  MIC_PERMISSION_DENIED: '麦克风权限已被拒绝，请在浏览器设置中允许后刷新页面',
+  RECORDING_TOO_SHORT:   '录音时间太短，请长按麦克风按钮后再松开',
+  RECORDING_ABORTED:     '录音已取消',
+  ASR_TIMEOUT:           '识别超时，请重试',
+  ASR_NETWORK_ERROR:     '网络异常，请检查网络连接后重试',
+  ASR_EMPTY_RESULT:      '未识别到语音内容，请重试',
+  ASR_SERVICE_ERROR:     '语音服务异常，请稍后重试',
+});
+
+const LONG_PRESS_MS    = 280;    // ms before recording begins
+const MIN_RECORD_MS    = 500;    // minimum valid recording
+const MAX_RECORD_MS    = 60000;  // auto-commit at 60 s
+const ASR_TIMEOUT_MS   = 15000;  // recognition request deadline
+const CANCEL_THRESHOLD = 60;     // px upward delta → cancel
+
+// ── State variables ──────────────────────────────────────────────────────────
+let vsState          = VS.IDLE;
+let vsPermission     = 'unknown';   // unknown | granted | denied
+let vsMediaRecorder  = null;
+let vsStream         = null;
+let vsAudioChunks    = [];
+let vsMimeType       = '';
+let vsStartTime      = 0;
+let vsStartY         = 0;
+let vsCurrentY       = 0;
+let vsPointerId      = null;        // captured pointer id
+let vsLongPressTimer = null;
+let vsTimerInterval  = null;
+let vsAutoStopTimer  = null;
+let vsAsrAbort       = null;        // AbortController for fetch
+
+// ── State transition ─────────────────────────────────────────────────────────
+function vsTransition(newState) {
+  if (vsState === newState) return;
+  vsState = newState;
+  vsRenderState(newState);
+}
+
+function vsRenderState(state) {
+  const overlay  = document.getElementById('voice-overlay');
+  const recPane  = document.getElementById('vso-recording');
+  const recogPane= document.getElementById('vso-recognizing');
+  const btn      = document.getElementById('voice-btn');
+  const btnIcon  = document.getElementById('voice-btn-icon');
+  const btnSpin  = document.getElementById('voice-btn-spinner');
+
+  // Overlay visibility
+  const showOverlay = (state === VS.RECORDING || state === VS.RECOGNIZING);
+  overlay.classList.toggle('active', showOverlay);
+  if (!showOverlay) overlay.classList.remove('cancel-zone-active');
+
+  // Pane switching
+  recPane.style.display    = state === VS.RECORDING   ? '' : 'none';
+  recogPane.style.display  = state === VS.RECOGNIZING ? 'flex' : 'none';
+
+  // Button decoration
+  btn.classList.toggle('active',      state === VS.RECORDING);
+  btn.classList.toggle('recognizing', state === VS.RECOGNIZING);
+  const showSpinner = state === VS.REQUESTING;
+  if (btnIcon) btnIcon.style.display = showSpinner ? 'none' : '';
+  if (btnSpin) btnSpin.style.display = showSpinner ? ''     : 'none';
+
+  // Side-effects per state
+  if (state === VS.RECORDING) {
+    vsStartTimer();
+    vsCancelZone(false);
+  } else {
+    vsStopTimer();
+  }
+  if (state === VS.IDLE) {
+    clearTimeout(vsAutoStopTimer);
+    // Re-evaluate perm button whenever we settle to idle
+    // (permission may have changed during REQUESTING phase)
+    updatePermButton();
+  }
+}
+
+// ── Pointer event handlers (SR-2: pointerId capture, no multi-touch mess) ───
+function vsmPointerDown(e) {
+  // Only handle primary button / first finger
+  if (e.button !== undefined && e.button !== 0) return;
+  if (vsPointerId !== null) return;          // already tracking
+  if (vsState !== VS.IDLE) return;
+
+  e.preventDefault();
+  vsPointerId = e.pointerId;
+  vsStartY    = e.clientY;
+  vsCurrentY  = e.clientY;
+
+  try { e.currentTarget.setPointerCapture(vsPointerId); } catch (_) {}
+
+  vsLongPressTimer = setTimeout(() => vsBeginRecording(), LONG_PRESS_MS);
+}
+
+function vsmPointerMove(e) {
+  if (e.pointerId !== vsPointerId) return;
+  vsCurrentY = e.clientY;
+  if (vsState === VS.RECORDING) {
+    vsCancelZone(vsStartY - vsCurrentY > CANCEL_THRESHOLD);
+  }
+}
+
+function vsmPointerUp(e) {
+  if (e.pointerId !== vsPointerId) return;
+  e.preventDefault();
+  clearTimeout(vsLongPressTimer);
+
+  const pid = vsPointerId;
+  vsPointerId = null;
+  try { e.currentTarget.releasePointerCapture(pid); } catch (_) {}
+
+  if (vsState === VS.RECORDING) {
+    const swipedUp = vsStartY - vsCurrentY > CANCEL_THRESHOLD;
+    if (swipedUp) {
+      vsAbortRecording('RECORDING_ABORTED');
+    } else {
+      vsCommitRecording();
+    }
+  }
+}
+
+function vsmPointerCancel(e) {
+  if (e.pointerId !== vsPointerId) return;
+  clearTimeout(vsLongPressTimer);
+  vsPointerId = null;
+  if (vsState === VS.RECORDING) vsAbortRecording('RECORDING_ABORTED');
+}
+
+// ── Begin recording (SR-1: permission flow) ──────────────────────────────────
+async function vsBeginRecording() {
+  // Browser / HTTPS check (SR-1)
+  const isLocalhost = ['localhost','127.0.0.1','::1'].includes(location.hostname);
+  if (!window.isSecureContext && !isLocalhost) {
+    vsShowError('HTTPS_REQUIRED');
+    return;
+  }
+  if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+    vsShowError('MIC_NOT_SUPPORTED');
+    return;
+  }
+
+  vsTransition(VS.REQUESTING);   // show spinner on button
+
+  // getUserMedia — this is where the browser permission prompt fires
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        channelCount:     1,
+        sampleRate:       16000,
+      },
+    });
+    vsPermission = 'granted';
+  } catch (err) {
+    vsPermission = 'denied';
+    vsTransition(VS.IDLE);
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      // SR-1: show rich dialog with step-by-step instructions
+      document.getElementById('voice-perm-denied').classList.add('active');
+    } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+      showToast('未检测到麦克风设备', 'error');
+    } else {
+      showToast(ASR_ERRORS.MIC_NOT_SUPPORTED, 'error');
+    }
+    return;
+  }
+
+  vsStream = stream;
+
+  // Pick best MIME type (widest browser support)
+  const MIME_CANDIDATES = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/ogg;codecs=opus',
+    'audio/ogg',
+    'audio/mp4',
+  ];
+  vsMimeType = MIME_CANDIDATES.find(t => MediaRecorder.isTypeSupported(t)) || '';
+  vsAudioChunks = [];
+
+  try {
+    vsMediaRecorder = vsMimeType
+      ? new MediaRecorder(vsStream, {mimeType: vsMimeType})
+      : new MediaRecorder(vsStream);
+    vsMimeType = vsMediaRecorder.mimeType; // normalise
+  } catch (_) {
+    vsMediaRecorder = new MediaRecorder(vsStream);
+    vsMimeType = vsMediaRecorder.mimeType;
+  }
+
+  vsMediaRecorder.ondataavailable = ev => {
+    if (ev.data && ev.data.size > 0) vsAudioChunks.push(ev.data);
+  };
+  vsMediaRecorder.onerror = () => {
+    vsCleanupStream();
+    vsTransition(VS.IDLE);
+    showToast(ASR_ERRORS.ASR_SERVICE_ERROR, 'error');
+  };
+
+  vsMediaRecorder.start(80);   // chunk every 80 ms → smoother final blob
+  vsStartTime = Date.now();
+
+  // SR-3: auto-commit safety after MAX_RECORD_MS
+  vsAutoStopTimer = setTimeout(() => {
+    if (vsState === VS.RECORDING) vsCommitRecording();
+  }, MAX_RECORD_MS);
+
+  vsTransition(VS.RECORDING);
+}
+
+// ── Commit (release → recognise) ────────────────────────────────────────────
+function vsCommitRecording() {
+  if (vsState !== VS.RECORDING || !vsMediaRecorder) return;
+
+  const elapsed = Date.now() - vsStartTime;
+  if (elapsed < MIN_RECORD_MS) {
+    vsAbortRecording('RECORDING_TOO_SHORT');
+    return;
+  }
+
+  // Flush remaining data, then submit
+  vsMediaRecorder.onstop = () => vsSubmitAudio();
+  vsMediaRecorder.stop();
+  vsCleanupStream();
+  vsTransition(VS.RECOGNIZING);
+}
+
+// ── Abort (cancel gesture / pointer cancel) ──────────────────────────────────
+function vsAbortRecording(errCode) {
+  if (vsMediaRecorder) {
+    vsMediaRecorder.ondataavailable = null;
+    vsMediaRecorder.onstop          = null;
+    try { vsMediaRecorder.stop(); } catch (_) {}
+    vsMediaRecorder = null;
+  }
+  vsCleanupStream();
+  vsAudioChunks  = [];
+  vsTransition(VS.IDLE);
+  if (errCode && errCode !== 'RECORDING_ABORTED') {
+    showToast(ASR_ERRORS[errCode] || errCode, 'error');
+  } else if (errCode === 'RECORDING_ABORTED') {
+    showToast('录音已取消');
+  }
+}
+
+// ── Abort ASR fetch (SR-5: user taps Cancel during recognition) ──────────────
+function vsAbortAsr() {
+  if (vsAsrAbort) vsAsrAbort.abort('user_cancel');
+  vsTransition(VS.IDLE);
+  showToast('识别已取消');
+}
+
+// ── Stream cleanup ───────────────────────────────────────────────────────────
+function vsCleanupStream() {
+  clearTimeout(vsAutoStopTimer);
+  if (vsStream) {
+    vsStream.getTracks().forEach(t => t.stop());
+    vsStream = null;
+  }
+}
+
+// ── Submit audio blob to ASR ─────────────────────────────────────────────────
+async function vsSubmitAudio() {
+  if (!vsAudioChunks.length) {
+    vsTransition(VS.IDLE);
+    showToast(ASR_ERRORS.ASR_EMPTY_RESULT, 'error');
+    return;
+  }
+
+  const mime = vsMimeType || 'audio/webm';
+  const ext  = mime.includes('ogg') ? 'ogg' : mime.includes('mp4') ? 'm4a' : 'webm';
+  const blob = new Blob(vsAudioChunks, {type: mime});
+  vsAudioChunks  = [];
+  vsMediaRecorder= null;
+
+  const fd = new FormData();
+  fd.append('file', blob, `rec_${Date.now()}.${ext}`);
+  fd.append('user', 'default_user');
+
+  // SR-3: AbortController + timeout for recognition
+  vsAsrAbort      = new AbortController();
+  const timeoutId = setTimeout(() => vsAsrAbort.abort('timeout'), ASR_TIMEOUT_MS);
+
+  try {
+    const resp = await fetch('/api/audio-to-text', {
+      method: 'POST',
+      body:   fd,
+      signal: vsAsrAbort.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!resp.ok) {
+      const txt = await resp.text().catch(() => '');
+      throw new Error(txt.slice(0, 120) || `HTTP ${resp.status}`);
+    }
+
+    const data = await resp.json();
+
+    // SR-4: result handling
+    if (data.text && data.text.trim()) {
+      const inp   = document.getElementById('message-input');
+      const cur   = inp.value.trimEnd();
+      inp.value   = cur ? cur + ' ' + data.text.trim() : data.text.trim();
+      autoResize(inp);
+      inp.focus();
+      vsTransition(VS.IDLE);
+      showToast('识别完成 ✓', 'ok');
+    } else if (data.error) {
+      vsTransition(VS.IDLE);
+      showToast(ASR_ERRORS.ASR_EMPTY_RESULT + '（' + data.error + '）', 'error');
+    } else {
+      vsTransition(VS.IDLE);
+      showToast(ASR_ERRORS.ASR_EMPTY_RESULT, 'error');
+    }
+  } catch (err) {
+    clearTimeout(timeoutId);
+    vsTransition(VS.IDLE);  // SR-3: always fall back to idle
+
+    if (err.name === 'AbortError' || String(err.message || err).includes('timeout')) {
+      showToast(ASR_ERRORS.ASR_TIMEOUT, 'error');
+    } else if (!navigator.onLine) {
+      showToast(ASR_ERRORS.ASR_NETWORK_ERROR, 'error');
+    } else {
+      showToast(ASR_ERRORS.ASR_SERVICE_ERROR + ': ' + String(err.message || err).slice(0, 60), 'error');
+    }
+  } finally {
+    vsAsrAbort = null;
+  }
+}
+
+// ── Timer ────────────────────────────────────────────────────────────────────
+function vsStartTimer() {
+  vsStopTimer();
+  const el = document.getElementById('voice-timer');
+  vsTimerInterval = setInterval(() => {
+    const s = Math.floor((Date.now() - vsStartTime) / 1000);
+    if (el) {
+      el.textContent  = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+      el.style.color  = s >= 55 ? 'var(--warn)' : '';   // yellow warning near limit
+    }
+  }, 500);
+}
+
+function vsStopTimer() {
+  clearInterval(vsTimerInterval);
+  const el = document.getElementById('voice-timer');
+  if (el) { el.textContent = '0:00'; el.style.color = ''; }
+}
+
+// ── Cancel zone visual feedback ──────────────────────────────────────────────
+function vsCancelZone(active) {
+  const overlay = document.getElementById('voice-overlay');
+  const hint    = document.getElementById('voice-swipe-hint');
+  overlay.classList.toggle('cancel-zone-active', active);
+  if (hint) hint.textContent = active ? '↑ 松开即取消' : '↑ 上滑取消';
+}
+
+// ── Permission denied dialog (SR-1) ──────────────────────────────────────────
+function closePermDenied() {
+  document.getElementById('voice-perm-denied').classList.remove('active');
+}
+
+// ── Generic error → IDLE ─────────────────────────────────────────────────────
+function vsShowError(code) {
+  vsTransition(VS.IDLE);
+  showToast(ASR_ERRORS[code] || code, 'error');
+}
+
+// ── Pre-auth button (SR-2 ghost-recording prevention) ────────────────────────
+// Users click this once to trigger the permission prompt in a clean gesture
+// (not during a long-press), so by the time they record the browser won't
+// pop any modal.
+
+async function vsRequestPermission() {
+  const btn = document.getElementById('voice-perm-btn');
+
+  // Already granted → nothing to do
+  if (vsPermission === 'granted') {
+    updatePermButton();
+    return;
+  }
+
+  // If denied, show the step-by-step dialog instead of re-requesting
+  if (vsPermission === 'denied') {
+    document.getElementById('voice-perm-denied').classList.add('active');
+    return;
+  }
+
+  // Request permission with a spinner on the button
+  if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+  vsTransition(VS.REQUESTING);
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+    // Immediately release the stream — we only needed the permission grant
+    stream.getTracks().forEach(t => t.stop());
+    vsPermission = 'granted';
+    vsTransition(VS.IDLE);
+    updatePermButton();
+    showToast('麦克风已授权，长按即可录音 ✓', 'ok');
+  } catch (err) {
+    vsTransition(VS.IDLE);
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      vsPermission = 'denied';
+      updatePermButton();
+      document.getElementById('voice-perm-denied').classList.add('active');
+    } else {
+      showToast(ASR_ERRORS.MIC_NOT_SUPPORTED, 'error');
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+  }
+}
+
+function updatePermButton() {
+  const btn = document.getElementById('voice-perm-btn');
+  if (!btn) return;
+
+  // Hide when already granted, or when browser doesn't support mic at all
+  const supported = !!(navigator.mediaDevices?.getUserMedia);
+  if (!supported || vsPermission === 'granted') {
+    btn.style.display = 'none';
+    return;
+  }
+
+  btn.style.display = '';
+  if (vsPermission === 'denied') {
+    btn.classList.add('denied');
+    btn.title = '麦克风被拒绝，点击查看开启指引';
+  } else {
+    btn.classList.remove('denied');
+    btn.title = '点击预授权麦克风，避免录音时弹出权限窗口';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RENAME DIALOG
+════════════════════════════════════════════════════════════════════════════ */
+function openRenameDialog() {
+  if (!currentConvId) return;
+  const conv = conversations.find(c => c.id === currentConvId);
+  const inp  = document.getElementById('rename-input');
+  inp.value  = conv?.title || '';
+  document.getElementById('rename-dialog').classList.add('active');
+  inp.focus();
+  inp.select();
+}
+
+function closeRenameDialog() {
+  document.getElementById('rename-dialog').classList.remove('active');
+}
+
+async function confirmRename() {
+  const title = document.getElementById('rename-input').value.trim();
+  if (!title || !currentConvId) { closeRenameDialog(); return; }
+  try {
+    await apiFetch(`/api/conversations/${currentConvId}/title`, {
+      method:  'PUT',
+      headers: {'Content-Type':'application/json'},
+      body:    JSON.stringify({title}),
+    });
+    const conv = conversations.find(c => c.id === currentConvId);
+    if (conv) conv.title = title;
+    setTitle(title);
+    renderSidebar();
+    showToast('已重命名', 'ok');
+  } catch(e) { showToast('重命名失败', 'error'); }
+  closeRenameDialog();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeRenameDialog();
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SIDEBAR
+════════════════════════════════════════════════════════════════════════════ */
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('show');
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   UI HELPERS
+════════════════════════════════════════════════════════════════════════════ */
+function setTitle(t) {
+  const title = t || '新对话';
+  document.getElementById('chat-title').textContent = title;
+  document.title = `${title} - AI 助手`;
+}
+
+let toastTimer;
+function showToast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = 'show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', 2800);
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
